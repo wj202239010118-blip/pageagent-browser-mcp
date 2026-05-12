@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "page-agent": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@page-agent/mcp"],
+      "env": {
+        "LLM_BASE_URL": "填写你的 OpenAI 兼容 API 地址",
+        "LLM_MODEL_NAME": "填写模型名称，例如 qwen-turbo / gpt-4o-mini",
+        "LLM_API_KEY": "填写你的 API Key"
+      }
+    }
+  }
+}
