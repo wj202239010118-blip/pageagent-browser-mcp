@@ -34,7 +34,7 @@ export class HubBridge {
 	/** @type {{ resolve: (r: {success: boolean, data: string}) => void, reject: (e: Error) => void } | null} */
 	#pendingTask = null
 
-	/** @type {Map<string, { resolve: (data: string) => void, reject: (e: Error) => void }>} */
+	/** @type {Map<string, { operation: string, resolve: (data: string) => void, reject: (e: Error) => void }>} */
 	#pendingOps = new Map()
 
 	/** @param {number} port */
@@ -148,6 +148,7 @@ export class HubBridge {
 			}, timeout)
 
 			this.#pendingOps.set(id, {
+				operation,
 				resolve: (data) => { clearTimeout(timer); resolve(data) },
 				reject: (err) => { clearTimeout(timer); reject(err) },
 			})
@@ -190,7 +191,9 @@ export class HubBridge {
 					if (msg.success) {
 						pending.resolve(msg.data ?? '')
 					} else {
-						pending.reject(new Error(msg.error ?? 'browser_op failed'))
+						const raw = typeof msg.error === 'string' ? msg.error : ''
+						const errorText = raw.trim() ? raw : 'browser_op failed (no error message)'
+						pending.reject(new Error(`[${pending.operation}] ${errorText}`))
 					}
 				}
 			}
