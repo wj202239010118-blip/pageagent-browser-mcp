@@ -2,6 +2,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { exec } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { platform } from 'node:os'
 import * as z from 'zod/v4'
 
@@ -369,6 +370,29 @@ mcpServer.registerTool(
 	async ({ text, timeout = 15000 }) => {
 		try {
 			const data = await hub.executePrimitiveOp('wait', { text, timeout })
+			return { content: [{ type: 'text', text: data }] }
+		} catch (err) {
+			return { content: [{ type: 'text', text: `Error: ${err.message}` }], isError: true }
+		}
+	}
+)
+
+mcpServer.registerTool(
+	'browser_upload_file',
+	{
+		description:
+			'Upload a local file to the browser by injecting it into a file input element. Reads the file from disk, encodes it as base64, and dispatches it to the input. Use this to upload files to web forms without manual interaction.',
+		inputSchema: {
+			index: z.number().int().positive().describe('Index of the <input type="file"> element from browser_get_map'),
+			filePath: z.string().describe('Absolute path to the local file to upload'),
+		},
+	},
+	async ({ index, filePath }) => {
+		try {
+			const fileBuffer = readFileSync(filePath)
+			const base64 = fileBuffer.toString('base64')
+			const fileName = filePath.replace(/\\/g, '/').split('/').pop()
+			const data = await hub.executePrimitiveOp('upload_file', { index, base64, fileName })
 			return { content: [{ type: 'text', text: data }] }
 		} catch (err) {
 			return { content: [{ type: 'text', text: `Error: ${err.message}` }], isError: true }
